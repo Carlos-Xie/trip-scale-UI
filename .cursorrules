@@ -1,0 +1,107 @@
+# Cursor Rules — Expo React Native with NativeWind
+
+本项目是使用 Expo（React Native + expo-router）与 NativeWind（Tailwind 风格）构建的移动应用。以下规则用于指导在 Cursor 中的自动补全、重构与代码生成，使其与项目技术栈和约定保持一致。
+
+## 技术栈基线
+- 必须基于 React Native 与 Expo（Managed Workflow）。
+- 路由与页面结构使用 `expo-router`（`app/` 目录约定式路由）。
+- 使用 TypeScript。
+- UI 样式统一使用 NativeWind（`className` Tailwind 实用类），尽量避免 `StyleSheet.create`，除非有性能或动态计算场景确需使用。
+- 组件优先使用 `react-native` 内置组件与项目已有的封装组件。
+
+## 目录与现有封装
+- 路由与页面：`app/` 目录（包括 `(tabs)` 等分组）。
+- 主题封装：使用 `components/ThemedView.tsx` 与 `components/ThemedText.tsx`，在页面与组件中尽量使用它们而不是直接使用 `View` 与 `Text`。
+- 通用组件与片段：遵循 `components/` 目录结构；已有如 `components/trips/*`、`components/ui/*`。
+- 颜色常量：如需扩展主题色，以 NativeWind 配置为主，必要时参考 `constants/Colors.ts`。
+
+## 样式规范（NativeWind）
+- 使用 `className` 编写样式，例如：`className="px-4 py-2 rounded-lg bg-blue-500 dark:bg-blue-600"`。
+- 尽量通过 Tailwind 原子类表达布局和视觉；避免内联样式对象。
+- 颜色、间距、字体大小等以 `tailwind.config.js` 的设计令牌为准。需要新增设计令牌时先修改 `tailwind.config.js`。
+- 多主题/暗黑模式：优先使用 NativeWind 的暗色模式与主题能力，不在组件内硬编码颜色。
+
+## 组件与可访问性
+- 新增组件一律采用函数式组件与 Hooks。
+- 交互组件使用 `Pressable`（或适合的手势组件），提供 `accessibilityRole`、`accessibilityLabel`（当交互意图不够自解释时）。
+- 图片与图标优先使用 Expo 生态与 `assets/` 内资源，图标可用 `@expo/vector-icons`（通过 `npx expo install` 安装）。
+
+## 路由与导航（expo-router）
+- 遵循 `app/` 目录的文件即路由约定；使用布局文件 `_layout.tsx` 组织导航结构与 Tab。
+- 页面间跳转使用 `expo-router` 提供的 API（如 `Link`、`useRouter`、`useLocalSearchParams`）。
+
+## 包管理与兼容
+- 安装依赖一律使用 `npx expo install <pkg>` 以确保版本兼容 Expo SDK。
+- 新增三方库必须确认 Expo（Managed）可用，避免需要自定义原生配置的包。
+- 平台特定实现可使用文件后缀：`.ios.tsx` / `.android.tsx`。仅当确有必要时分平台实现。
+
+## 性能与工程实践
+- 优先启用 `memo`、`useCallback`、`useMemo` 避免无谓重渲染，保持依赖数组正确。
+- 列表使用 `FlatList`/`SectionList` 并提供稳定的 `keyExtractor`；分页或虚拟化场景避免一次性渲染全部。
+- 图片使用合适的尺寸与缓存策略；大图或远程图考虑使用 `expo-image`（可用则优先）。
+- 事件与副作用：避免在 render 阶段做重活；数据请求放在 effect 或专门的数据层。
+
+## 代码风格与质量
+- 按现有 ESLint/Prettier 配置执行（已有 `eslint.config.js`、`prettier.config.js`）。
+- 保持明确的命名与类型标注，公共导出接口显式标注类型。
+- 控制流优先使用早返回，限制深层嵌套；错误处理与边界条件优先处理。
+- 避免 TODO 注释，直接实现或开 Issue 追踪。
+
+## 资源与静态文件
+- 所有本地资源置于 `assets/`；引用路径相对、命名清晰。
+- Splash、图标、启动图等按 Expo 规范配置在 `app.json`。
+
+## 示例片段
+
+使用 NativeWind 与主题封装：
+
+```tsx
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+
+export function Card() {
+  return (
+    <ThemedView className="m-4 rounded-xl p-4 bg-white/80 dark:bg-zinc-900/80">
+      <ThemedText className="text-base font-semibold">Hello</ThemedText>
+      <ThemedText className="text-sm text-zinc-600 dark:text-zinc-300">
+        This is a themed card styled by NativeWind.
+      </ThemedText>
+    </ThemedView>
+  );
+}
+```
+
+页面与路由（expo-router）：
+
+```tsx
+// app/example.tsx
+import { Link } from "expo-router";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+
+export default function ExampleScreen() {
+  return (
+    <ThemedView className="flex-1 items-center justify-center">
+      <ThemedText className="text-xl font-bold">Example</ThemedText>
+      <Link href="/" className="mt-4 text-blue-600 dark:text-blue-400">
+        Go Home
+      </Link>
+    </ThemedView>
+  );
+}
+```
+
+## Do / Don't
+
+Do
+- 使用 `className` 与 NativeWind；新增设计令牌先改 `tailwind.config.js`。
+- 通过 `npx expo install` 安装依赖，选择 Expo 兼容库。
+- 使用 `ThemedView` 与 `ThemedText` 实现主题一致性。
+- 遵循 `app/` 路由规则与 `_layout.tsx` 布局。
+
+Don't
+- 不要使用不兼容 Expo（需裸工作流）的原生库。
+- 不要在组件中硬编码平台颜色或尺寸，尽量使用设计令牌。
+- 非必要不要使用 `StyleSheet.create` 或大段内联样式对象。
+
+
